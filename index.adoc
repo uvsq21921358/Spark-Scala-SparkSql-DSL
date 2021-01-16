@@ -1,0 +1,25 @@
+= Introduction à Spark
+Stéphane Lopes <stephane.lopes@uvsq.fr>
+v2020-2021
+:doctype: book
+:toc: left
+:toc-title: Sommaire
+:sectanchors:
+:sectlinks:
+:sectnums:
+:masterdoc:
+:stem:
+:icons: font
+:imagesdir: figs
+:sourcedir: ./exemples
+:source-highlighter: pygments
+
+:leveloffset: +1
+
+include::intro/intro.adoc[]
+
+include::rdd/rdd.adoc[]
+
+include::sql/sql.adoc[]
+
+:leveloffset: -1

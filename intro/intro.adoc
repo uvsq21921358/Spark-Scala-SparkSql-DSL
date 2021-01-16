@@ -1,0 +1,116 @@
+= Introduction
+
+== Qu'est-ce que Spark ?
+* Apache https://spark.apache.org/[Spark] est un framework de calcul distribué orienté mémoire
+* Très répandu dans un contexte _big data_ du fait de ses performances
+** jusqu'à 100x plus rapide qu'Hadoop _MapReduce_ en mémoire et 10x sur disque
+* Propose un modèle de programmation plus riche et plus souple que _MapReduce_
+* Développé au https://amplab.cs.berkeley.edu/[AMPLab] de Berkeley
+** publié à NSDI'2012, https://amplab.cs.berkeley.edu/publication/resilient-distributed-datasets-a-fault-tolerant-abstraction-for-in-memory-cluster-computing/[Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing], Matei et al.
+* Projet Open Source soutenu par la société https://databricks.com/[Databricks]
+
+== Écosystème de Spark
+[ditaa]
+....
+ +-------------+ +-------------+ +----------+ +---------+
+ |             | |             | |          | |         |
+ |  SparkSQL   | |  Streaming  | |  GraphX  | |  MLlib  |
+ |             | |             | |          | |         |
+ +-------------+ +-------------+ +----------+ +---------+
+
+ +-------------+------------+--------------+------------+
+ |  API Scala  |  API Java  |  API Python  |   API R    |
+ +-------------+------------+--------------+------------+
+ |                                                      |
+ |                     Spark Core (RDD)                 |
+ |                                                      |
+ +-------------+---------------------+------------------+
+               ^                     ^
+               |                     |
+               v                     v
+         +-----+-----+        +------+-------+
+         |Stockage   |        |Déploiement   |
+         |           |        |              |
+         | o local   |        | o autonome   |
+         | o HDFS    |        | o YARN       |
+         | o S3      |        | o Mesos      |
+         | o Ceph    |        | o Kubernetes |
+         | o SGBD    |        |              |
+         |        {s}|        |              |
+         +-----------+        +--------------+
+....
+
+* https://spark.apache.org/docs/latest/rdd-programming-guide.html[Spark Core (RDD)]
+* APIs
+** https://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.package[Scala]
+** https://spark.apache.org/docs/latest/api/java/index.html[Java]
+** https://spark.apache.org/docs/latest/api/python/index.html[Python]
+** https://spark.apache.org/docs/latest/api/R/index.html[R]
+* Bibliothèques intégrées
+** https://spark.apache.org/sql/[SparkSQL]
+** https://spark.apache.org/streaming/[Streaming] / https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html[Structured Streaming]
+** https://spark.apache.org/graphx/[GraphX]
+** https://spark.apache.org/mllib/[MLlib]
+* https://spark.apache.org/docs/latest/cluster-overview.html[Déploiement]
+* https://spark.apache.org/docs/latest/sql-data-sources.html[Sources de données]
+
+== Wordcount en Spark/Scala
+[source,scala]
+----
+val data = sc.textFile("/path/to/somefile") // <1>
+val tokens = data.flatMap(_.split(" ")) // <2>
+val wordFreq = tokens.map((_, 1)).reduceByKey(_ + _) // <3>
+wordFreq.sortBy(s => -s._2).map(x => (x._2, x._1)).top(10) // <4>
+----
+<1> Charge le fichier dans un RDD
+<2> Transforme les lignes en succession de mots
+<3> Ajoute un compteur pour chaque mot puis fait la somme
+<4> Trie par compteur décroissant, inverse mot et compteur puis prend les 10 premiers
+
+== Wordcount en Spark/Python
+[source,python]
+----
+text_file = spark.textFile("hdfs://...")
+
+text_file.flatMap(lambda line: line.split())
+    .map(lambda word: (word, 1))
+    .reduceByKey(lambda a, b: a+b)
+----
+
+== Bibliothèques et applications externes
+* https://spark-packages.org/[SparkPackages]
+* https://spark.apache.org/third-party-projects.html[Third-Party Projects]
+** https://mesos.apache.org/[Mesos]
+** https://github.com/amplab-extras/SparkR-pkg[SparkR]
+** https://zeppelin.apache.org/[Zeppelin]
+
+== Exécuter une application
+* `spark-shell` (REPL pour Spark/Scala)
+** `pyspark` pour Python, `sparkR` pour R, `spark-sql` pour SQL (_Hive metastore service in local mode_)
+* `spark-submit` pour https://spark.apache.org/docs/latest/submitting-applications.html[soumettre une application] à Spark
+[source,bash]
+----
+spark-submit \
+  --class <main-class> \
+  --master <master-url> \
+  --deploy-mode <deploy-mode> \
+  --conf <key>=<value> \
+  ... # other options
+  <application-jar> \
+  [application-arguments]
+----
+* Notebooks https://zeppelin.apache.org/[Zeppelin] ou http://jupyter.org/[Jupyter]
+* https://accounts.cloud.databricks.com/registration.html#signup/community[Databricks Community Edition]
+* https://www.docker.com/[Docker] + image
+
+== Controler l'exécution (`--master`)
+`local`, `local[<n>]`, `local[*]`:: exécution local avec respectivement 1, n ou _nombre de coeurs_ threads
+`spark://<host>:<port>`:: https://spark.apache.org/docs/latest/spark-standalone.html[exécution en cluster autonome]
+`yarn`:: https://spark.apache.org/docs/latest/running-on-yarn.html[exécution avec YARN] (Hadoop)
+`mesos://<host>:<port>`:: https://spark.apache.org/docs/latest/running-on-mesos.html[exécution sur un cluster Mesos]
+`k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>`::
+https://spark.apache.org/docs/latest/running-on-kubernetes.html[exécution avec Kubernetes]
+
+== Spark en cluster
+image::cluster-overview.png[]
+Source: https://spark.apache.org/docs/latest/running-on-mesos.html[Running Spark on Mesos]
